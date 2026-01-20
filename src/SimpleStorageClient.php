@@ -66,6 +66,8 @@ class SimpleStorageClient implements SimpleStorageInterface
 
     /**
      * Handle API response and throw exceptions for errors.
+     *
+     * @throws SimpleStorageException
      */
     protected function handleResponse(Response $response, string $context = ''): array
     {
@@ -83,6 +85,8 @@ class SimpleStorageClient implements SimpleStorageInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @throws SimpleStorageException
      */
     public function health(): HealthStatus
     {
@@ -109,6 +113,8 @@ class SimpleStorageClient implements SimpleStorageInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @throws SimpleStorageException
      */
     public function upload(string $jobId, string $filePath): UploadResult
     {
@@ -129,6 +135,8 @@ class SimpleStorageClient implements SimpleStorageInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @throws SimpleStorageException
      */
     public function uploadContent(string $jobId, string $content): UploadResult
     {
@@ -149,6 +157,8 @@ class SimpleStorageClient implements SimpleStorageInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @throws SimpleStorageException
      */
     public function download(string $jobId, bool $keep = false): string
     {
@@ -172,6 +182,8 @@ class SimpleStorageClient implements SimpleStorageInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @throws SimpleStorageException
      */
     public function downloadTo(string $jobId, string $destinationPath, bool $keep = false): string
     {
@@ -192,6 +204,8 @@ class SimpleStorageClient implements SimpleStorageInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @throws SimpleStorageException
      */
     public function delete(string $jobId): bool
     {
@@ -228,6 +242,8 @@ class SimpleStorageClient implements SimpleStorageInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @throws SimpleStorageException
      */
     public function list(): Collection
     {
