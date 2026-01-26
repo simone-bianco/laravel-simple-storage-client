@@ -1,5 +1,5 @@
 {
-    "name": "dolphin/simple-storage-client",
+    "name": "simone-bianco/laravel-simple-storage-client",
     "description": "Laravel client for Dolphin Simple Storage Server - A plug-and-play package for storing and retrieving ZIP files",
     "keywords": [
         "laravel",
