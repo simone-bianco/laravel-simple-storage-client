@@ -109,6 +109,58 @@ return [
 
 ---
 
+## Storage Driver Usage
+
+You can use the Simple Storage Server as a standard Laravel Storage disk.
+
+### 1. Configure `filesystems.php`
+
+Add the following to your `config/filesystems.php` disks array:
+
+```php
+'disks' => [
+    // ...
+    'simple' => [
+        'driver' => 'simple-storage',
+        // Optional: override global config
+        // 'base_url' => env('SIMPLE_STORAGE_URL'),
+        // 'api_key' => env('SIMPLE_STORAGE_API_KEY'),
+    ],
+],
+```
+
+### 2. Use the Storage Facade
+
+Now you can use standard Storage methods:
+
+```php
+use Illuminate\Support\Facades\Storage;
+
+// Upload file
+Storage::disk('simple')->put('job-123', 'file content');
+
+// Check existence
+if (Storage::disk('simple')->exists('job-123')) {
+    // ...
+}
+
+// Get content
+$content = Storage::disk('simple')->get('job-123');
+
+// Delete
+Storage::disk('simple')->delete('job-123');
+
+// Get file size
+$size = Storage::disk('simple')->size('job-123');
+
+// Get last modified timestamp
+$time = Storage::disk('simple')->lastModified('job-123');
+```
+
+> **Note:** Directory operations (`makeDirectory`, `deleteDirectory`) are not fully supported as the storage is flat, but `deleteDirectory` will attempt to delete all files matching the prefix.
+
+---
+
 ## API Reference
 
 ### Health Check

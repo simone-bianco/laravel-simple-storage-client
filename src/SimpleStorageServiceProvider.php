@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Dolphin\SimpleStorage;
 
 use Dolphin\SimpleStorage\Contracts\SimpleStorageInterface;
+use Illuminate\Support\Facades\Storage;
+use League\Flysystem\Filesystem;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -49,6 +51,30 @@ class SimpleStorageServiceProvider extends PackageServiceProvider
         // Alias for convenience
         $this->app->alias(SimpleStorageInterface::class, 'simple-storage');
         $this->app->alias(SimpleStorageInterface::class, SimpleStorageClient::class);
+    }
+
+    /**
+     * Bootstrap any package services.
+     */
+    public function packageBooted(): void
+    {
+        Storage::extend('simple-storage', function ($app, $config) {
+            $client = new SimpleStorageClient([
+                'base_url' => $config['base_url'] ?? config('simple-storage.base_url'),
+                'api_key' => $config['api_key'] ?? config('simple-storage.api_key'),
+                'timeout' => $config['timeout'] ?? config('simple-storage.timeout'),
+                'connect_timeout' => $config['connect_timeout'] ?? config('simple-storage.connect_timeout'),
+                'retry' => [
+                    'times' => $config['retry']['times'] ?? config('simple-storage.retry.times'),
+                    'sleep_ms' => $config['retry']['sleep_ms'] ?? config('simple-storage.retry.sleep_ms'),
+                ],
+                'verify_ssl' => $config['verify_ssl'] ?? config('simple-storage.verify_ssl'),
+            ]);
+
+            $adapter = new SimpleStorageAdapter($client);
+
+            return new Filesystem($adapter, $config);
+        });
     }
 
     /**
