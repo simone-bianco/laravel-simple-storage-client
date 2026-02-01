@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Dolphin\SimpleStorage;
+namespace SimoneBianco\SimpleStorageClient;
 
-use Dolphin\SimpleStorage\Contracts\SimpleStorageInterface;
+use SimoneBianco\SimpleStorageClient\Contracts\SimpleStorageInterface;
 use Illuminate\Support\Facades\Storage;
 use League\Flysystem\Filesystem;
 use Spatie\LaravelPackageTools\Package;

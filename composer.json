@@ -31,12 +31,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Dolphin\\SimpleStorage\\": "src/"
+            "SimoneBianco\\SimpleStorageClient\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Dolphin\\SimpleStorage\\Tests\\": "tests/"
+            "SimoneBianco\\SimpleStorageClient\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -52,10 +52,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Dolphin\\SimpleStorage\\SimpleStorageServiceProvider"
+                "SimoneBianco\\SimpleStorageClient\\SimpleStorageServiceProvider"
             ],
             "aliases": {
-                "SimpleStorage": "Dolphin\\SimpleStorage\\Facades\\SimpleStorage"
+                "SimpleStorage": "SimoneBianco\\SimpleStorageClient\\Facades\\SimpleStorage"
             }
         }
     },

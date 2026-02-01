@@ -2,13 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Dolphin\SimpleStorage\Exceptions;
+namespace SimoneBianco\SimpleStorageClient\Exceptions;
 
 use Exception;
 use Illuminate\Http\Client\Response;
 
 /**
- * Exception thrown when a Simple Storage operation fails.
+ * Base exception thrown when a Simple Storage operation fails.
+ *
+ * This is the base class for all Simple Storage exceptions. Specific exception
+ * types extend this class to provide more granular exception handling:
+ *
+ * - ConnectionFailedException: Network/connection issues (should NOT be silently caught)
+ * - NotFoundException: Resource not found (HTTP 404)
+ * - FileGoneException: Resource deleted (HTTP 410)
+ * - UnauthorizedException: Authentication failed (HTTP 401)
+ *
+ * @see ConnectionFailedException
+ * @see NotFoundException
+ * @see FileGoneException
+ * @see UnauthorizedException
  */
 class SimpleStorageException extends Exception
 {
@@ -36,6 +49,38 @@ class SimpleStorageException extends Exception
     }
 
     /**
+     * Check if this exception represents a connection failure.
+     */
+    public function isConnectionError(): bool
+    {
+        return $this instanceof ConnectionFailedException;
+    }
+
+    /**
+     * Check if this exception represents a "not found" error.
+     */
+    public function isNotFound(): bool
+    {
+        return $this instanceof NotFoundException;
+    }
+
+    /**
+     * Check if this exception represents a "file gone/deleted" error.
+     */
+    public function isFileGone(): bool
+    {
+        return $this instanceof FileGoneException;
+    }
+
+    /**
+     * Check if this exception represents an authentication error.
+     */
+    public function isUnauthorized(): bool
+    {
+        return $this instanceof UnauthorizedException;
+    }
+
+    /**
      * Create exception from HTTP response.
      */
     public static function fromResponse(Response $response, string $context = ''): self
@@ -53,47 +98,42 @@ class SimpleStorageException extends Exception
 
     /**
      * Create a connection exception.
+     *
+     * @deprecated Use new ConnectionFailedException($url, $previous) instead
      */
-    public static function connectionFailed(string $url, ?Exception $previous = null): self
+    public static function connectionFailed(string $url, ?Exception $previous = null): ConnectionFailedException
     {
-        return new self(
-            message: "Failed to connect to Simple Storage Server at {$url}",
-            code: 0,
-            previous: $previous
-        );
+        return new ConnectionFailedException($url, $previous);
     }
 
     /**
      * Create an authentication exception.
+     *
+     * @deprecated Use new UnauthorizedException() instead
      */
-    public static function unauthorized(): self
+    public static function unauthorized(): UnauthorizedException
     {
-        return new self(
-            message: 'Invalid or missing API key',
-            code: 401
-        );
+        return new UnauthorizedException();
     }
 
     /**
      * Create a not found exception.
+     *
+     * @deprecated Use new NotFoundException($jobId) instead
      */
-    public static function notFound(string $jobId): self
+    public static function notFound(string $jobId): NotFoundException
     {
-        return new self(
-            message: "Job not found: {$jobId}",
-            code: 404
-        );
+        return new NotFoundException($jobId);
     }
 
     /**
      * Create a file deleted exception.
+     *
+     * @deprecated Use new FileGoneException($jobId) instead
      */
-    public static function fileDeleted(string $jobId): self
+    public static function fileDeleted(string $jobId): FileGoneException
     {
-        return new self(
-            message: "File already deleted: {$jobId}",
-            code: 410
-        );
+        return new FileGoneException($jobId);
     }
 
     /**

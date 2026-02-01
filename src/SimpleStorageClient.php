@@ -2,13 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Dolphin\SimpleStorage;
+namespace SimoneBianco\SimpleStorageClient;
 
-use Dolphin\SimpleStorage\Contracts\SimpleStorageInterface;
-use Dolphin\SimpleStorage\DataTransferObjects\FileInfo;
-use Dolphin\SimpleStorage\DataTransferObjects\HealthStatus;
-use Dolphin\SimpleStorage\DataTransferObjects\UploadResult;
-use Dolphin\SimpleStorage\Exceptions\SimpleStorageException;
+use SimoneBianco\SimpleStorageClient\Contracts\SimpleStorageInterface;
+use SimoneBianco\SimpleStorageClient\DataTransferObjects\FileInfo;
+use SimoneBianco\SimpleStorageClient\DataTransferObjects\HealthStatus;
+use SimoneBianco\SimpleStorageClient\DataTransferObjects\UploadResult;
+use SimoneBianco\SimpleStorageClient\Exceptions\ConnectionFailedException;
+use SimoneBianco\SimpleStorageClient\Exceptions\FileGoneException;
+use SimoneBianco\SimpleStorageClient\Exceptions\NotFoundException;
+use SimoneBianco\SimpleStorageClient\Exceptions\SimpleStorageException;
+use SimoneBianco\SimpleStorageClient\Exceptions\UnauthorizedException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -76,9 +80,7 @@ class SimpleStorageClient implements SimpleStorageInterface
         }
 
         match ($response->status()) {
-            401 => throw SimpleStorageException::unauthorized(),
-            404 => throw SimpleStorageException::fromResponse($response, $context),
-            410 => throw SimpleStorageException::fromResponse($response, $context),
+            401 => throw new UnauthorizedException(),
             default => throw SimpleStorageException::fromResponse($response, $context),
         };
     }
@@ -95,7 +97,7 @@ class SimpleStorageClient implements SimpleStorageInterface
 
             return HealthStatus::fromArray($this->handleResponse($response, 'Health check failed'));
         } catch (ConnectionException $e) {
-            throw SimpleStorageException::connectionFailed($this->baseUrl, $e);
+            throw new ConnectionFailedException($this->baseUrl, $e);
         }
     }
 
@@ -129,7 +131,7 @@ class SimpleStorageClient implements SimpleStorageInterface
 
             return UploadResult::fromArray($this->handleResponse($response, 'Upload failed'));
         } catch (ConnectionException $e) {
-            throw SimpleStorageException::connectionFailed($this->baseUrl, $e);
+            throw new ConnectionFailedException($this->baseUrl, $e);
         }
     }
 
@@ -151,7 +153,7 @@ class SimpleStorageClient implements SimpleStorageInterface
 
             return UploadResult::fromArray($this->handleResponse($response, 'Upload failed'));
         } catch (ConnectionException $e) {
-            throw SimpleStorageException::connectionFailed($this->baseUrl, $e);
+            throw new ConnectionFailedException($this->baseUrl, $e);
         }
     }
 
@@ -171,12 +173,12 @@ class SimpleStorageClient implements SimpleStorageInterface
             }
 
             match ($response->status()) {
-                404 => throw SimpleStorageException::notFound($jobId),
-                410 => throw SimpleStorageException::fileDeleted($jobId),
+                404 => throw new NotFoundException($jobId),
+                410 => throw new FileGoneException($jobId),
                 default => throw SimpleStorageException::fromResponse($response, 'Download failed'),
             };
         } catch (ConnectionException $e) {
-            throw SimpleStorageException::connectionFailed($this->baseUrl, $e);
+            throw new ConnectionFailedException($this->baseUrl, $e);
         }
     }
 
@@ -185,21 +187,21 @@ class SimpleStorageClient implements SimpleStorageInterface
      *
      * @throws SimpleStorageException
      */
-    public function downloadTo(string $jobId, string $destinationPath, bool $keep = false): string
+    public function downloadTo(string $jobId, string $absoluteDestinationPath, bool $keep = false): string
     {
-        $directory = dirname($destinationPath);
+        $directory = dirname($absoluteDestinationPath);
 
         if (!is_dir($directory) && !mkdir($directory, 0755, true)) {
-            throw SimpleStorageException::fileNotWritable($destinationPath);
+            throw SimpleStorageException::fileNotWritable($absoluteDestinationPath);
         }
 
         $content = $this->download($jobId, $keep);
 
-        if (file_put_contents($destinationPath, $content) === false) {
-            throw SimpleStorageException::fileNotWritable($destinationPath);
+        if (file_put_contents($absoluteDestinationPath, $content) === false) {
+            throw SimpleStorageException::fileNotWritable($absoluteDestinationPath);
         }
 
-        return $destinationPath;
+        return $absoluteDestinationPath;
     }
 
     /**
@@ -217,26 +219,49 @@ class SimpleStorageClient implements SimpleStorageInterface
             }
 
             if ($response->status() === 404) {
-                throw SimpleStorageException::notFound($jobId);
+                throw new NotFoundException($jobId);
             }
 
             throw SimpleStorageException::fromResponse($response, 'Delete failed');
         } catch (ConnectionException $e) {
-            throw SimpleStorageException::connectionFailed($this->baseUrl, $e);
+            throw new ConnectionFailedException($this->baseUrl, $e);
         }
     }
 
     /**
      * {@inheritDoc}
+     *
+     * Note: This method uses a lightweight HEAD request to check existence.
+     * It only catches NotFoundException and FileGoneException.
+     * Connection errors (ConnectionFailedException) will propagate.
+     *
+     * @throws ConnectionFailedException If the server is unreachable
+     * @throws UnauthorizedException If authentication fails
+     * @throws SimpleStorageException For other unexpected errors
      */
     public function exists(string $jobId): bool
     {
         try {
-            $files = $this->list();
+            $response = $this->httpClient()->get("/check/{$jobId}");
 
-            return $files->contains(fn (FileInfo $file) => $file->jobId === $jobId && $file->isAvailable());
-        } catch (SimpleStorageException) {
+            if ($response->successful()) {
+                return $response->json('status') === 'exists';
+            }
+
+            if ($response->status() === 404) {
+                return false;
+            }
+
+            $this->handleResponse($response, 'Existence check failed');
+
             return false;
+        } catch (ConnectionException $e) {
+            throw new ConnectionFailedException($this->baseUrl, $e);
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            if ($e->response->status() === 404) {
+                return false;
+            }
+            throw $e;
         }
     }
 
@@ -254,7 +279,23 @@ class SimpleStorageClient implements SimpleStorageInterface
             return collect($data['files'] ?? [])
                 ->map(fn (array $file) => FileInfo::fromArray($file));
         } catch (ConnectionException $e) {
-            throw SimpleStorageException::connectionFailed($this->baseUrl, $e);
+            throw new ConnectionFailedException($this->baseUrl, $e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws SimpleStorageException
+     */
+    public function cleanup(): array
+    {
+        try {
+            $response = $this->httpClient()->post('/cleanup');
+
+            return $this->handleResponse($response, 'Cleanup failed');
+        } catch (ConnectionException $e) {
+            throw new ConnectionFailedException($this->baseUrl, $e);
         }
     }
 

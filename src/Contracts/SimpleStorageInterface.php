@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Dolphin\SimpleStorage\Contracts;
+namespace SimoneBianco\SimpleStorageClient\Contracts;
 
-use Dolphin\SimpleStorage\DataTransferObjects\FileInfo;
-use Dolphin\SimpleStorage\DataTransferObjects\HealthStatus;
-use Dolphin\SimpleStorage\DataTransferObjects\UploadResult;
-use Dolphin\SimpleStorage\Exceptions\SimpleStorageException;
+use SimoneBianco\SimpleStorageClient\DataTransferObjects\FileInfo;
+use SimoneBianco\SimpleStorageClient\DataTransferObjects\HealthStatus;
+use SimoneBianco\SimpleStorageClient\DataTransferObjects\UploadResult;
+use SimoneBianco\SimpleStorageClient\Exceptions\ConnectionFailedException;
+use SimoneBianco\SimpleStorageClient\Exceptions\SimpleStorageException;
+use SimoneBianco\SimpleStorageClient\Exceptions\UnauthorizedException;
 use Illuminate\Support\Collection;
 
 /**
@@ -67,12 +69,12 @@ interface SimpleStorageInterface
      * Download a ZIP file and save it to disk.
      *
      * @param string $jobId The job identifier
-     * @param string $destinationPath Where to save the file
+     * @param string $absoluteDestinationPath Where to save the file (absolute path)
      * @param bool $keep If true, don't delete the file after download
      * @return string The full path to the saved file
      * @throws SimpleStorageException If the download fails
      */
-    public function downloadTo(string $jobId, string $destinationPath, bool $keep = false): string;
+    public function downloadTo(string $jobId, string $absoluteDestinationPath, bool $keep = false): string;
 
     /**
      * Delete a file from the storage server.
@@ -86,8 +88,15 @@ interface SimpleStorageInterface
     /**
      * Check if a file exists on the storage server.
      *
+     * Note: This method will throw exceptions for connection failures
+     * and authentication errors. It only returns false when the file
+     * genuinely doesn't exist.
+     *
      * @param string $jobId The job identifier
      * @return bool True if the file exists and is not deleted
+     * @throws ConnectionFailedException If the server is unreachable
+     * @throws UnauthorizedException If authentication fails
+     * @throws SimpleStorageException For other unexpected errors
      */
     public function exists(string $jobId): bool;
 
@@ -98,4 +107,12 @@ interface SimpleStorageInterface
      * @throws SimpleStorageException If the request fails
      */
     public function list(): Collection;
+
+    /**
+     * Trigger cleanup of old files on the server.
+     *
+     * @return array The cleanup result
+     * @throws SimpleStorageException If the request fails
+     */
+    public function cleanup(): array;
 }

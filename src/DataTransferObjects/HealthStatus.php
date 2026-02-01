@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Dolphin\SimpleStorage\DataTransferObjects;
+namespace SimoneBianco\SimpleStorageClient\DataTransferObjects;
 
 /**
  * Represents the health status of the Simple Storage Server.

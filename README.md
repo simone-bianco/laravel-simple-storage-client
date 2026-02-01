@@ -51,7 +51,7 @@ SIMPLE_STORAGE_API_KEY=your-api-key-here
 ## Quick Start
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 // Upload a file
 $result = SimpleStorage::upload('job-123', '/path/to/file.zip');
@@ -170,7 +170,7 @@ $time = Storage::disk('simple')->lastModified('job-123');
 Get detailed health status of the storage server.
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 $status = SimpleStorage::health();
 
@@ -205,7 +205,7 @@ Upload a ZIP file from disk.
 **Returns:** `UploadResult` DTO
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 $result = SimpleStorage::upload('job-123', storage_path('app/results.zip'));
 
@@ -227,7 +227,7 @@ Upload raw binary content directly.
 **Returns:** `UploadResult` DTO
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 // Create a ZIP in memory
 $zip = new ZipArchive();
@@ -256,7 +256,7 @@ Download file content as a string.
 **Returns:** Raw binary content
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 // Download and auto-delete from server
 $content = SimpleStorage::download('job-123');
@@ -280,7 +280,7 @@ Download file directly to disk.
 **Returns:** Full path to the saved file
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 $savedPath = SimpleStorage::downloadTo(
     'job-123',
@@ -305,7 +305,7 @@ Manually delete a file from the server.
 **Returns:** `true` if deletion was successful
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 try {
     SimpleStorage::delete('job-123');
@@ -330,7 +330,7 @@ Check if a file exists on the server.
 **Returns:** `true` if the file exists and is not deleted
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 if (SimpleStorage::exists('job-123')) {
     $content = SimpleStorage::download('job-123');
@@ -348,7 +348,7 @@ Get a collection of all stored files.
 **Returns:** `Collection` of `FileInfo` DTOs
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 $files = SimpleStorage::list();
 
@@ -425,8 +425,8 @@ final readonly class FileInfo
 All operations throw `SimpleStorageException` on failure:
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
-use Dolphin\SimpleStorage\Exceptions\SimpleStorageException;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Exceptions\SimpleStorageException;
 
 try {
     $content = SimpleStorage::download('non-existent-job');
@@ -459,7 +459,7 @@ try {
 You can inject the interface instead of using the Facade:
 
 ```php
-use Dolphin\SimpleStorage\Contracts\SimpleStorageInterface;
+use SimoneBianco\SimpleStorageClient\Contracts\SimpleStorageInterface;
 
 class PdfProcessorService
 {
@@ -485,8 +485,8 @@ class PdfProcessorService
 For testing, you can easily mock the interface:
 
 ```php
-use Dolphin\SimpleStorage\Contracts\SimpleStorageInterface;
-use Dolphin\SimpleStorage\DataTransferObjects\UploadResult;
+use SimoneBianco\SimpleStorageClient\Contracts\SimpleStorageInterface;
+use SimoneBianco\SimpleStorageClient\DataTransferObjects\UploadResult;
 
 it('stores processing results', function () {
     $mockStorage = Mockery::mock(SimpleStorageInterface::class);
@@ -513,7 +513,7 @@ it('stores processing results', function () {
 If you prefer not to use Facades:
 
 ```php
-use Dolphin\SimpleStorage\SimpleStorageClient;
+use SimoneBianco\SimpleStorageClient\SimpleStorageClient;
 
 // Using dependency injection
 public function __construct(
@@ -537,7 +537,7 @@ $result = $client->upload('job-123', '/path/to/file.zip');
 ### Custom Client Configuration at Runtime
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 // Change the base URL temporarily
 SimpleStorage::setBaseUrl('https://backup-storage.example.com');
@@ -549,7 +549,7 @@ SimpleStorage::setApiKey('different-key');
 ### Working with Callbacks
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 // Upload and handle result
 $result = SimpleStorage::upload('job-123', $zipPath);
@@ -566,7 +566,7 @@ if ($result->isSuccessful()) {
 ### Batch Operations
 
 ```php
-use Dolphin\SimpleStorage\Facades\SimpleStorage;
+use SimoneBianco\SimpleStorageClient\Facades\SimpleStorage;
 
 $jobIds = ['job-1', 'job-2', 'job-3'];
 
